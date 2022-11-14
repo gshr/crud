@@ -1,2 +1,4 @@
 /.env
 venv
+__Pycache__
+.idea
