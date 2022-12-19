@@ -13,9 +13,9 @@ app = FastAPI(
 load_dotenv()
 
 DB = boto3.resource(
-    'dynamodb',
-    aws_access_key_id=os.getenv("ACCESS_KEY"),
-    aws_secret_access_key=os.getenv("SECRET_KEY"),
+    'dynamodb'
+    # aws_access_key_id=os.getenv("ACCESS_KEY"),
+    # aws_secret_access_key=os.getenv("SECRET_KEY"),
 )
 
 
@@ -24,7 +24,7 @@ def get_session():
 
 
 __TableName__ = 'Person'
-PRIMARY_KEY = 'ADDHAR_ID'
+PRIMARY_KEY = 'ID'
 columns = ['AGE', 'NAME']
 
 
@@ -73,21 +73,54 @@ def addinfo(item: schemas.UserInfo, dynamodb=Depends(get_session)):
     print(item)
     data = item.dict()
     val = str(random.randint(1000, 100000000))
-    data['ADDHAR_ID'] = val
+    data['ID'] = val
 
     response = table.put_item(
         Item=data
-        # PRIMARY_KEY: str(random.randint(1000, 100000000)),
-        # 'NAME': fake.name(),
-        # 'ADDRESS': fake.address(),
-        # 'AGE': random.randint(20, 100),
-        # 'COUNTRY': fake.country()
-
     )
-
     response = table.get_item(Key={
         PRIMARY_KEY: val,
     })
 
     return response['Item']
 
+
+@app.delete('/data/{id}')
+async def deleteData(id, dynamodb=Depends(get_session)):
+    table = dynamodb.Table(__TableName__)
+    response = table.delete_item(Key={
+        PRIMARY_KEY: id,
+    })
+    if response['ResponseMetadata']['HTTPStatusCode'] == 200:
+        return {'detail': 'Item Deleted Successfully'}
+
+
+@app.put('/data/{id}')
+async def updateData(id, item: schemas.UserInfo, dynamodb=Depends(get_session)):
+    table = dynamodb.Table(__TableName__)
+    print(item)
+    print(id)
+    data = item.dict()
+    # response = table.update_item(
+    #     Item=data
+    # )
+
+    response = table.get_item(Key={
+        PRIMARY_KEY: id,
+    })
+
+    if 'Item' in response:
+        resp = table.update_item(Key={
+            PRIMARY_KEY: id
+        }, UpdateExpression="SET COUNTRY= :c , ADDRESS = :a , AGE= :age ",
+            ExpressionAttributeValues={':c': item.COUNTRY,
+                                       ':a': item.ADDRESS,
+                                       ':age': item.AGE},
+
+            ReturnValues="UPDATED_NEW"
+        )
+
+        return resp['Attributes']
+
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                        detail=f"User with id {id} was not found")
