@@ -5,6 +5,7 @@ import json
 import random
 from fastapi import FastAPI, Depends, HTTPException, status
 import schemas
+from mangum import Mangum
 
 app = FastAPI()
 
@@ -12,7 +13,7 @@ load_dotenv()
 
 DB = boto3.resource(
     'dynamodb',
-    aws_access_key_id= os.getenv("ACCESS_KEY"),
+    aws_access_key_id=os.getenv("ACCESS_KEY"),
     aws_secret_access_key=os.getenv("SECRET_KEY")
 )
 
@@ -122,3 +123,6 @@ async def updateData(id, item: schemas.UserInfo, dynamodb=Depends(get_session)):
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                         detail=f"User with id {id} was not found")
+
+
+handler = Mangum(app)
