@@ -6,16 +6,14 @@ import random
 from fastapi import FastAPI, Depends, HTTPException, status
 import schemas
 
-app = FastAPI(
-
-)
+app = FastAPI()
 
 load_dotenv()
 
 DB = boto3.resource(
-    'dynamodb'
-    # aws_access_key_id=os.getenv("ACCESS_KEY"),
-    # aws_secret_access_key=os.getenv("SECRET_KEY"),
+    'dynamodb',
+    aws_access_key_id= os.getenv("ACCESS_KEY"),
+    aws_secret_access_key=os.getenv("SECRET_KEY")
 )
 
 
